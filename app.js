@@ -3,6 +3,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var sqlite3 = require('sqlite3').verbose();
+var apiRouter = require('./routes/api');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -28,6 +29,7 @@ var db = new sqlite3.Database('./db/BTC.db', sqlite3.OPEN_READWRITE, (err) => {
 // Use routers
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/api', apiRouter);
 app.get('/api/date',(req,res) => {
     db.all('SELECT * FROM price',(err,rows) => {
         if(err){
@@ -37,5 +39,6 @@ app.get('/api/date',(req,res) => {
         res.json(rows);
     });
 });
+
 
 module.exports = app;
