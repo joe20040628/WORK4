@@ -57,4 +57,20 @@ router.get('/date', (req, res) => {
     });
 });
 
+//折線圖
+router.get('/pricesAndDates', (req, res) => {
+    var sql = 'SELECT Date, ClosePrice FROM price ORDER BY Date';
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            dates: rows.map(row => row.Date),
+            prices: rows.map(row => row.ClosePrice)
+        });
+    });
+});
+
 module.exports = router;

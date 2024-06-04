@@ -1,31 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>歷史價格查詢</title>
   <link rel="stylesheet" href="/stylesheets/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      color: #2c3e50;
+      width: 100%;
+    }
+    .content-container {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      margin-top: 20px;
+    }
+    .left-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-right: 20px;
+    }
+    .right-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    select, p, label {
+      font-size: 1.2em;
+    }
+    #dateSelector {
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      font-size: 1em;
+    }
+    #dialog {
+      display: none;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      margin: 20px auto;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    #dialog.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #dialog p {
+      margin: 10px 0;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+    }
+  </style>
 </head>
-
 <body>
 <h1>BitCoin歷史價格查詢</h1>
-<p>2024年1月1日至5月20日</p>
-<label for="dateSelector">選擇日期:</label>
-<select id="dateSelector">
-  <option value="">YYYY-MM-DD</option>
+<div class="content-container">
+  <div class="left-container">
+    <p>2024年1月1日至5月20日</p>
+    <label for="dateSelector">選擇日期:</label>
+    <select id="dateSelector">
+      <option value="">YYYY-MM-DD</option>
+    </select>
 
-</select>
-
-<div id="dialog" style="display: none;">
-  <h2>歷史該日價格</h2>
-  <p><strong>開盤價:</strong> <span id="openPrice"></span></p>
-  <p><strong>最高價:</strong> <span id="highPrice"></span></p>
-  <p><strong>最低價:</strong> <span id="lowPrice"></span></p>
-  <p><strong>收盤價:</strong> <span id="closePrice"></span></p>
-  <p><strong>交易量:</strong> <span id="volume"></span></p>
+    <div id="dialog">
+      <h2>歷史該日價格</h2>
+      <p><strong>開盤價:</strong> <span id="openPrice"></span></p>
+      <p><strong>最高價:</strong> <span id="highPrice"></span></p>
+      <p><strong>最低價:</strong> <span id="lowPrice"></span></p>
+      <p><strong>收盤價:</strong> <span id="closePrice"></span></p>
+      <p><strong>交易量:</strong> <span id="volume"></span></p>
+    </div>
+  </div>
+  <div class="right-container">
+    <div class="chart-container">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // 動態生成選項
   fetch('/api/dates')
@@ -58,12 +138,59 @@
                 document.getElementById('lowPrice').textContent = data.data.LowPrice;
                 document.getElementById('closePrice').textContent = data.data.ClosePrice;
                 document.getElementById('volume').textContent = data.data.Volume;
-                document.getElementById('dialog').style.display = 'block';
+                var dialog = document.getElementById('dialog');
+                dialog.style.display = 'block';
+                dialog.classList.add('show');
               }
             })
             .catch(error => console.error('Error:', error));
   });
+
+  // 繪製摺線圖
+  fetch('/api/pricesAndDates')
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              console.error(data.error);
+            } else {
+              var ctx = document.getElementById('priceChart').getContext('2d');
+              var chartData = {
+                labels: data.dates,
+                datasets: [{
+                  label: 'BitCoin 價格',
+                  data: data.prices,
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  fill: false,
+                  tension: 0.1
+                }]
+              };
+              var priceChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                  responsive: true,
+                  scales: {
+                    x: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: '日期'
+                      }
+                    },
+                    y: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: '價格'
+                      }
+                    }
+                  }
+                }
+              });
+            }
+          })
+          .catch(error => console.error('Error:', error));
 </script>
 </body>
-
 </html>
